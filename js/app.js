@@ -1,10 +1,11 @@
 (function() {
   'use strict';
 
-  const movies = [];
+  let movies = [];
 
   const renderMovies = function() {
     $('#listings').empty();
+    $('.material-tooltip').remove();
 
     for (const movie of movies) {
       const $col = $('<div>').addClass('col s6');
@@ -17,7 +18,9 @@
         'data-tooltip': movie.title
       });
 
-      $title.tooltip({ delay: 50 }).text(movie.title);
+      $title.tooltip({
+        delay: 50
+      }).text(movie.title);
 
       const $poster = $('<img>').addClass('poster');
 
@@ -56,5 +59,63 @@
     }
   };
 
-  // ADD YOUR CODE HERE
+  let searchMovies = function(userSearch) {
+    movies = [];
+
+    $.ajax({
+      method: 'GET',
+      url: `http://www.omdbapi.com/?s=${userSearch}`,
+      dataType: 'json',
+      success: function(data) {
+        let results = data.Search;
+
+        for (var result of results) {
+          let movie = {
+            id: result.imdbID,
+            poster: result.Poster,
+            title: result.Title,
+            year: result.Year
+          };
+
+          plot(movie);
+        }
+      },
+
+
+      error: function() {
+        console.log('error');
+      }
+    })
+  };
+
+  let plot = function(movie) {
+    $.ajax({
+      method: 'GET',
+      url: `http://www.omdbapi.com/?i=${movie.id}&plot=full`,
+      dataType: 'json',
+      success: function(data) {
+        movie.plot = data.Plot;
+
+        movies.push(movie);
+
+        renderMovies();
+      },
+
+      error: function() {
+        console.log('error');
+      }
+    })
+  };
+
+  $('form').on('submit', function(event) {
+    event.preventDefault();
+
+    let userSearch = $('#search').val();
+
+    if (userSearch === '') {
+      return false;
+    }
+
+    searchMovies(userSearch);
+  });
 })();
